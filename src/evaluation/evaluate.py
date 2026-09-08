@@ -7,7 +7,7 @@ Runs a fixed set of test questions through the RAG chain and scores:
   3. Abstention correctness -- does the agent correctly refuse to answer
      questions with no support in the knowledge base?
 
-Edit TEST_SET to match your own real documents before your demo.
+Edit TEST_SET to match the documents in the target knowledge base.
 """
 import os
 import sys

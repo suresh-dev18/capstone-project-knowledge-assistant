@@ -1,13 +1,13 @@
 # Enterprise Knowledge Assistant (Local Version)
 
-A Retrieval-Augmented Generation (RAG) agent that answers questions grounded in your own
+A Retrieval-Augmented Generation (RAG) agent that answers questions grounded in supplied
 documents, with citations. Runs **entirely on your laptop** — no cloud infra, no Databricks,
 no Azure setup required. The only external dependency is an LLM API for embeddings and
 generation (OpenAI, Azure OpenAI, or any OpenAI-compatible endpoint).
 
 This is the same architecture used in production RAG systems — just swapped from
 cloud-scale infra (Spark, Delta Lake, Databricks Vector Search) to local equivalents
-(pandas, JSON files, ChromaDB) so you can build and demo it in hours, not weeks.
+(pandas, JSON files, ChromaDB) for local development and execution.
 
 ## Architecture
 
@@ -37,7 +37,6 @@ Local documents (data/sample_docs/*.pdf, *.docx, *.txt)
 [7] UI                       src/app/streamlit_app.py
              local chat interface
 ```
-
 ## What changed vs. the Databricks/Azure version (and why it's a fair substitution)
 | Cloud component | Local equivalent | Why this is a legitimate swap |
 |---|---|---|
@@ -46,11 +45,9 @@ Local documents (data/sample_docs/*.pdf, *.docx, *.txt)
 | Databricks Vector Search | ChromaDB (persistent local mode) | Same job — approximate nearest-neighbor search over embeddings — just running in-process instead of as a managed cloud service |
 | Azure OpenAI | OpenAI **or** Azure OpenAI (configurable) | Identical API shape; swapping the base URL/key is a one-line config change, so this code ports straight back to Azure later if needed |
 
-**Talking point for your manager**: this local build proves the RAG logic end-to-end; migrating
-it to Databricks/Azure later is a matter of swapping the storage and vector-index layers
-(files → Delta tables, Chroma → Databricks Vector Search) — the ingestion, chunking, and RAG
-chain logic doesn't change. That's a genuinely good engineering story: prototype cheap and
-local, scale to cloud once validated.
+The storage and vector-index layers can be replaced independently for a cloud deployment
+(files → Delta tables, Chroma → Databricks Vector Search). The ingestion, chunking, and RAG
+chain interfaces remain unchanged.
 
 ## Setup
 
@@ -71,18 +68,19 @@ Works with either:
 - **Plain OpenAI**: set `LLM_PROVIDER=openai` and `OPENAI_API_KEY`
 - **Azure OpenAI**: set `LLM_PROVIDER=azure` and the `AZURE_OPENAI_*` variables
 
-### 3. Add your documents
+### 3. Add documents
 
 **Option A — batch, ahead of time:** drop PDF/DOCX/TXT files into `data/sample_docs/`
-(a sample HR policy doc is included so you can run the pipeline immediately).
+(a sample HR policy document is included for immediate pipeline execution).
 
 **Option B — on demand, at runtime:** point the assistant at a public URL (a news article,
 an e-paper edition, a public report, a documentation page — anything publicly accessible)
 or upload a file directly. Two ways to do this:
 
-- **From the UI** — the Streamlit app has a sidebar with a URL box and a file uploader.
-  Paste a link or upload a file, click index, and ask about it immediately.
-- **From the command line** — for quick testing without opening the UI:
+- **From the UI** — the Streamlit app has a URL box and a file uploader in the sidebar.
+        Upload a PDF, DOCX, or TXT file, select **Index uploaded file**, then enter questions in
+        the chat input. The indexed content is available immediately.
+- **From the command line** — add a local file or public URL without opening the UI:
   ```bash
   python scripts/add_document.py "https://example.com/some-article"
   python scripts/add_document.py "data/sample_docs/my_report.pdf"
@@ -107,8 +105,38 @@ evaluation, all in sequence, and prints results at each stage.
 ```bash
 streamlit run src/app/streamlit_app.py
 ```
-Use the sidebar to add documents (URL or upload) at any time, then ask questions in the
-main chat — new documents are queryable immediately after indexing, no restart needed.
+
+Use the sidebar to add a document. After indexing completes, ask questions in the main chat.
+No restart is required after adding a document.
+
+## Testing and usage proof
+
+Run the unit tests from the repository root:
+
+```bash
+python -m pytest -q
+```
+
+The test suite validates chunk size limits, overlap boundary preservation, short documents,
+and empty documents. A successful run reports six passing tests.
+
+To test with a local input file:
+
+1. Start the UI with `streamlit run src/app/streamlit_app.py`.
+2. In the sidebar, select **Upload a file** and choose a `.pdf`, `.docx`, or `.txt` file.
+3. Select **Index uploaded file** and wait for the chunk count confirmation.
+4. Enter a question in the chat input, such as `What are the main topics in this document?`.
+5. Review the answer and expand **Sources** to inspect the retrieved chunk identifiers.
+
+The same flow is available from the command line:
+
+```bash
+python scripts/add_document.py "path/to/document.pdf"
+streamlit run src/app/streamlit_app.py
+```
+
+Document indexing and question answering require a configured provider in `.env`. The unit
+tests do not require API credentials or external services.
 
 ## Repo structure
 ```
@@ -131,16 +159,7 @@ knowledge-assistant-local/
 ├── scripts/add_document.py             (CLI: add one URL or file on demand)
 ├── tests/test_chunking.py
 └── data/
-    ├── sample_docs/     (drop your real documents here)
+        ├── sample_docs/     (input documents)
     └── processed/       (intermediate JSON outputs — gitignored)
 ```
 
-## Demo walkthrough for your manager
-1. Show `data/sample_docs/` — real documents in, nothing pre-processed.
-2. Run `python scripts/run_pipeline.py` live — show each stage's output printed to console.
-3. Open `data/processed/chunks.json` — show the actual chunking output, explain the overlap logic.
-4. Launch the Streamlit app, ask a real question, show the answer **and** its citations.
-5. Show the evaluation report (`evaluation_reports/`) — proves the system is measured, not
-   just "looks like it works" on a couple of lucky demo questions.
-6. Mention the cloud migration path (table above) — shows you understand this as a stepping
-   stone to the production Azure/Databricks architecture, not a toy.

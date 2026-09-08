@@ -4,7 +4,7 @@ Local chat UI, now with on-demand ingestion:
   reports, docs pages) and it's fetched, chunked, embedded, and
   indexed immediately.
 - Or upload a file (PDF/DOCX/TXT) directly.
-Either way, you can query the new content right after it's added --
+Either way, the new content is queryable immediately after it's added --
 no need to restart or rerun a batch job.
 
 Run with:

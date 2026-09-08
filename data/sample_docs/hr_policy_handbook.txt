@@ -12,4 +12,4 @@ Expense Reimbursement:
 Employees are reimbursed for approved business expenses within 10 business days of
 submitting a valid receipt via the internal expense portal.
 
-(Replace this file with your own real internal documents before your demo.)
+(Replace this sample with documents for the target knowledge base.)
