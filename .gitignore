@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+data/processed/
+data/chroma_db/
+evaluation_reports/
+venv/
+.venv/
+*.egg-info/
