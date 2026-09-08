@@ -160,6 +160,6 @@ knowledge-assistant-local/
 ├── tests/test_chunking.py
 └── data/
         ├── sample_docs/     (input documents)
-    └── processed/       (intermediate JSON outputs — gitignored)
+        └── processed/       (intermediate JSON outputs — gitignored)
 ```
 
